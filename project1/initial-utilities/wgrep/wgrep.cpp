@@ -45,6 +45,8 @@ void readFile(int fileDescriptor, string searchTerm) {
       searchIndex = 0;
     }
   }
+
+  close(fileDescriptor);
 }
 
 int main(int argc, char *argv[]) {
