@@ -1,6 +1,9 @@
 **/tests-out/
+**/*.o
+**/*.d
 project1/initial-utilities/wcat/wcat
 project1/initial-utilities/wgrep/wgrep
 project1/initial-utilities/wzip/wzip
 project1/initial-utilities/wunzip/wunzip
 project2/processes-shell/wish
+project3/gunrock_web
