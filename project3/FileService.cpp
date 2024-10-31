@@ -39,7 +39,7 @@ void FileService::get(HTTPRequest *request, HTTPResponse *response) {
     response->setStatus(403);
     return;
   }
-  
+
   string fileContents = this->readFile(path);
   if (fileContents.size() == 0) {
     response->setStatus(403);

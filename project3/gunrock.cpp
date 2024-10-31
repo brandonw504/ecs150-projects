@@ -31,7 +31,7 @@ int THREAD_POOL_SIZE = 1;
 int BUFFER_SIZE = 1;
 string BASEDIR = "static";
 string SCHEDALG = "FIFO";
-string LOGFILE = "/dev/null";
+string LOGFILE = "log.txt"; // /dev/null
 
 vector<HttpService *> services;
 queue<MySocket *> buffer;
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < THREAD_POOL_SIZE; i++) {
     int ret =  dthread_create(&threadPool[i], NULL, &handle_request, NULL);
     if (ret != 0) {
-      cout << "Error: failed to create thread" << endl;
+      sync_print("Error: failed to create thread", "");
       exit(1);
     }
   }
