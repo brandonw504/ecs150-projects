@@ -31,7 +31,7 @@ int THREAD_POOL_SIZE = 1;
 int BUFFER_SIZE = 1;
 string BASEDIR = "static";
 string SCHEDALG = "FIFO";
-string LOGFILE = "log.txt"; // /dev/null
+string LOGFILE = "/dev/null";
 
 vector<HttpService *> services;
 queue<MySocket *> buffer;
@@ -62,7 +62,7 @@ void invoke_service_method(HttpService *service, HTTPRequest *request, HTTPRespo
     service->get(request, response);
   } else {
     // The server doesn't know about this method
-    response->setStatus(501);
+    response->setStatus(405);
   }
 }
 
@@ -76,6 +76,7 @@ void* handle_request(void *args) {
     MySocket *client = buffer.front();
     buffer.pop();
     numRequestsProcessing++;
+    dthread_mutex_unlock(&lock);
 
     HTTPRequest *request = new HTTPRequest(client, PORT);
     HTTPResponse *response = new HTTPResponse();
@@ -90,8 +91,8 @@ void* handle_request(void *args) {
       sync_print("read_request_return", payload.str());
     } catch (...) {
       // swallow it
-    }    
-      
+    }
+
     if (!readResult) {
       // there was a problem reading in the request, bail
       delete response;
@@ -119,6 +120,7 @@ void* handle_request(void *args) {
     client->close();
     delete client;
 
+    dthread_mutex_lock(&lock);
     numRequestsProcessing--;
     dthread_cond_signal(&mainCond);
     dthread_mutex_unlock(&lock);
@@ -153,7 +155,7 @@ int main(int argc, char *argv[]) {
       LOGFILE = string(optarg);
       break;
     default:
-      cerr<< "usage: " << argv[0] << " [-p port] [-t threads] [-b buffers]" << endl;
+      cerr << "usage: " << argv[0] << " [-p port] [-t threads] [-b buffers]" << endl;
       exit(1);
     }
   }
@@ -172,7 +174,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < THREAD_POOL_SIZE; i++) {
     int ret =  dthread_create(&threadPool[i], NULL, &handle_request, NULL);
     if (ret != 0) {
-      sync_print("Error: failed to create thread", "");
+      cerr << "Error: failed to create thread" << endl;
       exit(1);
     }
   }
@@ -184,7 +186,11 @@ int main(int argc, char *argv[]) {
     }
 
     sync_print("waiting_to_accept", "");
-    buffer.push(server->accept());
+    dthread_mutex_unlock(&lock);
+    MySocket *client = server->accept();
+    dthread_mutex_lock(&lock);
+
+    buffer.push(client);
     sync_print("client_accepted", "");
     
     if (!buffer.empty()) {
